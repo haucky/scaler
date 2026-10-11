@@ -1,0 +1,724 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bewusstseinskarte</title>
+<meta name="description" content="Sprich aus, was dich beschäftigt – und sieh es auf der Map of Consciousness von David R. Hawkins.">
+<meta name="theme-color" content="#0b0d12">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bewusstsein">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<style>
+:root{
+  --bg:#0b0d12; --bg2:#10131b; --surface:#151a24; --surface2:#1b2130;
+  --text:#ebe8e1; --muted:#99a0ac; --faint:#5d6472; --line:rgba(255,255,255,.08);
+  --accent:#c9b444; --danger:#e0707a;
+  --serif: "Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --sans: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --sat: env(safe-area-inset-top,0px); --sab: env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);overscroll-behavior:none}
+body{overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input,select,textarea{font:inherit;color:var(--text)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* Ambient background following the active level */
+#ambient{position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(120% 60% at 20% 50%, color-mix(in srgb,var(--accent) 16%, transparent) 0%, transparent 60%), var(--bg);
+  transition:background .8s ease}
+
+/* Edge heat strip */
+#edge,#edgeGlow{position:fixed;left:0;top:0;bottom:0;pointer-events:none;z-index:3;transition:opacity .8s}
+#edge{width:4px}
+#edgeGlow{width:46px;filter:blur(22px);opacity:.55;left:-14px}
+
+/* Header */
+header{position:fixed;top:0;left:0;right:0;z-index:10;padding:calc(var(--sat) + 10px) 16px 18px 20px;
+  display:flex;align-items:center;gap:10px;
+  background:linear-gradient(var(--bg) 35%, rgba(11,13,18,0))}
+#entryBtn{flex:1;min-width:0;text-align:left;display:flex;flex-direction:column;gap:2px;padding:4px 0}
+#entryTitle{font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#entrySub{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.iconbtn{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:var(--muted)}
+.iconbtn:active{background:var(--surface)}
+.iconbtn svg{width:22px;height:22px}
+
+/* Scale */
+#scale{position:fixed;inset:0;overflow-y:auto;scroll-snap-type:y proximity;z-index:1;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+#scale::-webkit-scrollbar{display:none}
+.spacer{height:calc(var(--sat) + 90px)}
+.spacer.bottom{height:calc(var(--sab) + 150px)}
+.level{--c:#888;min-height:74dvh;scroll-snap-align:center;display:flex;align-items:center;padding:28px 58px 28px 26px;position:relative}
+.level .inner{width:100%;max-width:560px;margin:0 auto;position:relative}
+.level::before{content:"";position:absolute;inset:8% 0 8% 0;pointer-events:none;
+  background:radial-gradient(70% 55% at 22% 50%, color-mix(in srgb,var(--c) calc(var(--w,0) * 30% + 5%), transparent), transparent 70%);
+  transition:opacity .6s}
+.cal{font-family:var(--serif);font-weight:400;font-size:58px;line-height:1;color:var(--c);letter-spacing:-.02em;font-variant-numeric:oldstyle-nums}
+.name{font-size:30px;font-weight:650;margin:6px 0 2px;letter-spacing:-.01em}
+.meta{font-size:13px;color:var(--muted);line-height:1.5}
+.meta b{font-weight:500;color:#c4c8cf}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;letter-spacing:.02em;
+  padding:5px 10px;border-radius:99px;background:color-mix(in srgb,var(--c) 22%, transparent);color:var(--text);margin-bottom:12px}
+.badge::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--c);box-shadow:0 0 10px var(--c)}
+.wbar{display:flex;align-items:center;gap:10px;margin:16px 0 4px;font-size:12px;color:var(--muted)}
+.wbar .track{flex:1;max-width:200px;height:4px;border-radius:4px;background:var(--line);overflow:hidden}
+.wbar .fill{height:100%;background:var(--c);border-radius:4px}
+.quote{margin:18px 0 0;padding:2px 0 2px 16px;border-left:2px solid var(--c);font-family:var(--serif);font-style:italic;font-size:19px;line-height:1.45;color:#f3efe6}
+.quote small{display:block;font-family:var(--sans);font-style:normal;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin-top:6px}
+.example{margin:16px 0 0;font-size:17px;line-height:1.55;color:#d9d6cf}
+.example.lead{color:var(--muted);font-size:15px}
+.threshold{display:flex;align-items:center;gap:12px;padding:6px 58px 6px 26px;color:var(--faint);font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+.threshold::before,.threshold::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--line),transparent)}
+
+/* Rail */
+#rail{position:fixed;right:8px;top:50%;transform:translateY(-50%);height:min(64dvh,520px);width:30px;z-index:5;
+  display:flex;flex-direction:column;gap:3px;padding:6px 0}
+#rail button{flex:1;position:relative;display:flex;align-items:center;justify-content:flex-end;padding:0 4px}
+#rail .seg{height:100%;width:6px;border-radius:3px;background:var(--c);opacity:.18;transition:all .35s}
+#rail .seg.hot{box-shadow:0 0 12px var(--c)}
+#rail button.active .seg{width:14px;opacity:1 !important}
+#rail button.active::before{content:"";position:absolute;right:24px;width:6px;height:6px;border-radius:50%;background:var(--text)}
+
+/* Dock */
+#dock{position:fixed;left:0;right:0;bottom:0;z-index:10;padding:28px 20px calc(var(--sab) + 18px);
+  display:flex;align-items:center;justify-content:center;gap:26px;
+  background:linear-gradient(rgba(11,13,18,0), var(--bg) 55%)}
+#recBtn{width:76px;height:76px;border-radius:50%;position:relative;display:grid;place-items:center;
+  background:radial-gradient(circle at 35% 30%, #2a3142, #161b26);border:1px solid rgba(255,255,255,.12);
+  box-shadow:0 8px 30px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.08);transition:transform .15s}
+#recBtn:active{transform:scale(.95)}
+#recBtn svg{width:30px;height:30px}
+#recBtn .ring{position:absolute;inset:-6px;border-radius:50%;border:2px solid var(--accent);opacity:0;transition:opacity .3s, transform .08s}
+body.recording #recBtn{background:radial-gradient(circle at 35% 30%, #4a2530, #2a1419);border-color:rgba(224,112,122,.4)}
+body.recording #recBtn .ring{opacity:.8;border-color:var(--danger)}
+.side{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;color:var(--muted);background:rgba(255,255,255,.04);border:1px solid var(--line)}
+.side svg{width:20px;height:20px}
+#timer{width:48px;text-align:center;font-variant-numeric:tabular-nums;color:var(--muted);font-size:14px}
+body:not(.recording) #timer{visibility:hidden}
+body.recording #textBtn{visibility:hidden}
+
+#hint{position:fixed;left:24px;right:24px;bottom:calc(var(--sab) + 130px);z-index:9;text-align:center;color:var(--muted);font-size:15px;line-height:1.5;transition:opacity .4s;pointer-events:none}
+#hint strong{display:block;color:var(--text);font-family:var(--serif);font-size:22px;font-weight:400;margin-bottom:4px}
+
+/* Processing overlay */
+#busy{position:fixed;inset:0;z-index:30;display:none;flex-direction:column;align-items:center;justify-content:center;gap:28px;
+  background:rgba(8,10,14,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);text-align:center;padding:24px}
+#busy.show{display:flex}
+.breath{width:110px;height:110px;border-radius:50%;
+  background:conic-gradient(from 0deg,#9b2c55,#d48a32,#c9b444,#5cbf86,#45a0bf,#7b72d9,#f1e6c8,#9b2c55);
+  filter:blur(1px);animation:breathe 4s ease-in-out infinite, spin 12s linear infinite;
+  -webkit-mask:radial-gradient(circle, transparent 46%, #000 48%);mask:radial-gradient(circle, transparent 46%, #000 48%)}
+@keyframes breathe{0%,100%{transform:scale(.82);opacity:.7}50%{transform:scale(1.05);opacity:1}}
+@keyframes spin{to{rotate:360deg}}
+#busyText{font-family:var(--serif);font-size:21px}
+#busySub{color:var(--muted);font-size:14px;margin-top:-18px}
+
+/* Sheets */
+.sheet-bg{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:opacity .25s}
+.sheet-bg.show{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:41;max-height:88dvh;overflow-y:auto;
+  background:var(--bg2);border-top:1px solid var(--line);border-radius:22px 22px 0 0;
+  padding:10px 22px calc(var(--sab) + 26px);transform:translateY(105%);transition:transform .32s cubic-bezier(.2,.8,.2,1);max-width:640px;margin:0 auto}
+.sheet.show{transform:none}
+.grip{width:38px;height:4px;border-radius:4px;background:var(--line);margin:0 auto 14px}
+.sheet h2{font-family:var(--serif);font-weight:400;font-size:24px;margin:4px 0 16px}
+.sheet h3{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin:22px 0 8px;font-weight:600}
+.sheet p{line-height:1.55;margin:0 0 10px;color:#d6d3cc}
+.field{display:flex;flex-direction:column;gap:6px;margin:12px 0}
+.field label{font-size:13px;color:var(--muted)}
+.input{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;outline:none;width:100%}
+.input:focus{border-color:rgba(255,255,255,.25)}
+textarea.input{min-height:160px;resize:vertical;line-height:1.5}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.btn{padding:12px 18px;border-radius:12px;background:var(--surface2);border:1px solid var(--line);font-weight:550}
+.btn.primary{background:var(--text);color:#111;border-color:transparent}
+.btn.danger{color:var(--danger)}
+.btn:disabled{opacity:.45}
+.small{font-size:13px;color:var(--muted);line-height:1.5}
+.small a{color:var(--text)}
+.care{border:1px solid rgba(224,112,122,.35);background:rgba(224,112,122,.08);border-radius:14px;padding:14px 16px;margin:6px 0 12px}
+.next{border-left:2px solid var(--accent);padding-left:14px}
+
+.hist{list-style:none;margin:0;padding:0}
+.hist li{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.hist .dot{width:10px;height:10px;border-radius:50%;flex:none}
+.hist .t{flex:1;min-width:0;text-align:left}
+.hist .t div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hist .t .d{font-size:12px;color:var(--muted);margin-top:2px}
+.hist .del{color:var(--faint);padding:8px}
+
+/* Setup */
+#setup{position:fixed;inset:0;z-index:60;background:var(--bg);display:none;overflow-y:auto;padding:calc(var(--sat) + 40px) 26px calc(var(--sab) + 30px)}
+#setup.show{display:block}
+#setup .wrap{max-width:460px;margin:0 auto}
+#setup .logo{width:72px;height:72px;border-radius:20px;margin-bottom:22px}
+#setup h1{font-family:var(--serif);font-weight:400;font-size:32px;margin:0 0 10px}
+#setup p{color:#cfccc4;line-height:1.6}
+#setup ol{color:#cfccc4;line-height:1.7;padding-left:20px}
+#setup a{color:var(--text)}
+
+#toast{position:fixed;left:50%;bottom:calc(var(--sab) + 120px);transform:translate(-50%,20px);z-index:70;max-width:min(92vw,460px);
+  background:var(--surface2);border:1px solid var(--line);padding:12px 16px;border-radius:14px;font-size:14px;line-height:1.45;opacity:0;pointer-events:none;transition:all .3s}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#toast.err{border-color:rgba(224,112,122,.5)}
+
+@media (min-width:760px){
+  .level{padding-left:80px}
+  .cal{font-size:72px}.name{font-size:36px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div id="ambient"></div>
+<div id="edgeGlow"></div><div id="edge"></div>
+
+<header>
+  <button id="entryBtn" aria-label="Zusammenfassung öffnen">
+    <span id="entryTitle">Bewusstseinskarte</span>
+    <span id="entrySub">Map of Consciousness · David R. Hawkins</span>
+  </button>
+  <button class="iconbtn" id="histBtn" aria-label="Verlauf">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg>
+  </button>
+  <button class="iconbtn" id="setBtn" aria-label="Einstellungen">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+  </button>
+</header>
+
+<main id="scale" aria-label="Skala des Bewusstseins"></main>
+<nav id="rail" aria-label="Stufen"></nav>
+
+<div id="hint"><strong>Was beschäftigt dich gerade?</strong>Tippe auf das Mikrofon und erzähl einfach drauflos.</div>
+
+<div id="dock">
+  <button class="side" id="textBtn" aria-label="Stattdessen schreiben">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>
+  </button>
+  <button id="recBtn" aria-label="Aufnahme starten">
+    <span class="ring" id="ring"></span>
+    <svg id="micIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+    <svg id="stopIcon" viewBox="0 0 24 24" style="display:none"><rect x="7" y="7" width="10" height="10" rx="2" fill="#f0c4c8"/></svg>
+  </button>
+  <div id="timer">0:00</div>
+</div>
+
+<div id="busy" role="status" aria-live="polite">
+  <div class="breath"></div>
+  <div id="busyText">Ich höre noch einmal genau hin …</div>
+  <div id="busySub">Einen Moment – Gemini ordnet deine Worte auf der Skala ein.</div>
+</div>
+
+<div class="sheet-bg" id="sheetBg"></div>
+
+<section class="sheet" id="sumSheet" aria-label="Zusammenfassung"><div class="grip"></div><div id="sumBody"></div></section>
+
+<section class="sheet" id="histSheet" aria-label="Verlauf">
+  <div class="grip"></div>
+  <h2>Verlauf</h2>
+  <ul class="hist" id="histList"></ul>
+  <div class="row">
+    <button class="btn" id="exportBtn">Als JSON exportieren</button>
+    <button class="btn" id="importBtn">Importieren</button>
+    <input type="file" id="importFile" accept="application/json,.json" class="sr">
+  </div>
+</section>
+
+<section class="sheet" id="textSheet" aria-label="Schreiben">
+  <div class="grip"></div>
+  <h2>Was beschäftigt dich?</h2>
+  <textarea class="input" id="textIn" placeholder="Schreib einfach auf, was gerade in dir los ist …"></textarea>
+  <div class="row"><button class="btn primary" id="textSend">Einordnen</button><button class="btn" data-close>Abbrechen</button></div>
+</section>
+
+<section class="sheet" id="setSheet" aria-label="Einstellungen">
+  <div class="grip"></div>
+  <h2>Einstellungen</h2>
+  <h3>Gemini API-Key</h3>
+  <p class="small" id="keyState"></p>
+  <div class="field"><input class="input" id="keyIn2" type="password" autocomplete="off" placeholder="Neuen Key einfügen"></div>
+  <div class="row"><button class="btn" id="keySave2">Key ersetzen</button><button class="btn danger" id="keyDel">Key löschen</button></div>
+  <h3>Modell</h3>
+  <div class="field"><label for="modelIn">Modellname</label><input class="input" id="modelIn" autocomplete="off" spellcheck="false"></div>
+  <div class="field"><label for="thinkIn">Denktiefe</label>
+    <select class="input" id="thinkIn"><option value="low">Niedrig – schneller</option><option value="medium">Mittel – ausgewogen</option><option value="high">Hoch – gründlicher, langsamer</option></select></div>
+  <h3>Daten</h3>
+  <p class="small">Alles bleibt auf diesem Gerät: dein Verlauf und der Key liegen im lokalen Speicher dieser Website. Audio wird nicht gespeichert, nur an Gemini geschickt.</p>
+  <div class="row"><button class="btn danger" id="wipeBtn">Alle Daten löschen</button></div>
+  <p class="small" style="margin-top:18px">Skala nach David R. Hawkins, „Power vs. Force“. Keine Diagnose – nur ein Spiegel.</p>
+</section>
+
+<div id="setup">
+  <div class="wrap">
+    <img class="logo" src="icons/icon-192.png" alt="">
+    <h1>Willkommen</h1>
+    <p>Sprich aus, was dich beschäftigt. Die App ordnet es auf der <em>Map of Consciousness</em> von David R. Hawkins ein und zeigt dir, wie sich dasselbe Thema auf jeder Stufe anfühlen würde.</p>
+    <p>Dafür brauchst du einen eigenen Gemini API-Key:</p>
+    <ol>
+      <li>Öffne <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a></li>
+      <li>Erstelle einen Key und kopiere ihn</li>
+      <li>Füge ihn hier ein</li>
+    </ol>
+    <div class="field"><input class="input" id="keyIn" type="password" autocomplete="off" placeholder="AIza…" spellcheck="false"></div>
+    <div class="row"><button class="btn primary" id="keySave">Speichern &amp; los</button></div>
+    <p class="small" style="margin-top:18px">Der Key wird nur im Speicher dieser Website auf diesem Gerät abgelegt. Andere Websites und Apps haben darauf keinen Zugriff, und er wird ausschließlich direkt an Google geschickt.</p>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+'use strict';
+/* ---------- Map of Consciousness ---------- */
+const LEVELS = [
+  {key:'shame',        name:'Scham',        cal:'20',  emotion:'Demütigung',      process:'Auslöschung',          view:'elend',              color:'#8e2448'},
+  {key:'guilt',        name:'Schuld',       cal:'30',  emotion:'Schuldzuweisung', process:'Zerstörung',           view:'böse',               color:'#a02c42'},
+  {key:'apathy',       name:'Apathie',      cal:'50',  emotion:'Verzweiflung',    process:'Aufgeben',             view:'hoffnungslos',       color:'#a8403a'},
+  {key:'grief',        name:'Kummer',       cal:'75',  emotion:'Bedauern',        process:'Niedergeschlagenheit', view:'tragisch',           color:'#b55436'},
+  {key:'fear',         name:'Angst',        cal:'100', emotion:'Sorge',           process:'Rückzug',              view:'beängstigend',       color:'#c06934'},
+  {key:'desire',       name:'Begierde',     cal:'125', emotion:'Verlangen',       process:'Versklavung',          view:'enttäuschend',       color:'#ca7e33'},
+  {key:'anger',        name:'Wut',          cal:'150', emotion:'Hass',            process:'Aggression',           view:'feindselig',         color:'#d29234'},
+  {key:'pride',        name:'Stolz',        cal:'175', emotion:'Verachtung',      process:'Aufblähung',           view:'anspruchsvoll',      color:'#d6a63c'},
+  {key:'courage',      name:'Mut',          cal:'200', emotion:'Bejahung',        process:'Ermächtigung',         view:'machbar',            color:'#c4b847'},
+  {key:'neutrality',   name:'Neutralität',  cal:'250', emotion:'Vertrauen',       process:'Loslassen',            view:'zufriedenstellend',  color:'#8fbf62'},
+  {key:'willingness',  name:'Bereitschaft', cal:'310', emotion:'Optimismus',      process:'Absicht',              view:'hoffnungsvoll',      color:'#5cbf86'},
+  {key:'acceptance',   name:'Akzeptanz',    cal:'350', emotion:'Vergebung',       process:'Transzendenz',         view:'harmonisch',         color:'#47b3a3'},
+  {key:'reason',       name:'Vernunft',     cal:'400', emotion:'Verstehen',       process:'Abstraktion',          view:'sinnvoll',           color:'#45a0bf'},
+  {key:'love',         name:'Liebe',        cal:'500', emotion:'Ehrfurcht',       process:'Offenbarung',          view:'gütig',              color:'#5a88d6'},
+  {key:'joy',          name:'Freude',       cal:'540', emotion:'Gelassenheit',    process:'Verklärung',           view:'vollkommen',         color:'#7b74d9'},
+  {key:'peace',        name:'Frieden',      cal:'600', emotion:'Glückseligkeit',  process:'Erleuchtung',          view:'vollendet',          color:'#a27de0'},
+  {key:'enlightenment',name:'Erleuchtung',  cal:'700–1000', emotion:'Unbeschreiblich', process:'Reines Bewusstsein', view:'es ist',          color:'#efe3c4'}
+];
+const KEYS = LEVELS.map(l=>l.key);
+const BY = Object.fromEntries(LEVELS.map(l=>[l.key,l]));
+const DEFAULT_MODEL = 'gemini-3.8-flash';
+const MAX_SECONDS = 300;
+
+/* ---------- Storage (same-origin only) ---------- */
+const LS = {
+  get(k,d=null){try{const v=localStorage.getItem(k);return v===null?d:v}catch{return d}},
+  set(k,v){try{localStorage.setItem(k,v)}catch(e){toast('Speichern fehlgeschlagen: '+e.message,true)}},
+  del(k){try{localStorage.removeItem(k)}catch{}}
+};
+const K = {key:'bk.apiKey', hist:'bk.history', model:'bk.model', think:'bk.thinking'};
+const getKey = ()=>LS.get(K.key);
+const getModel = ()=>LS.get(K.model, DEFAULT_MODEL) || DEFAULT_MODEL;
+const getThink = ()=>LS.get(K.think, 'medium');
+function getHist(){try{return JSON.parse(LS.get(K.hist,'[]'))||[]}catch{return []}}
+function setHist(h){LS.set(K.hist, JSON.stringify(h))}
+
+/* ---------- Helpers ---------- */
+const $ = s=>document.querySelector(s);
+const esc = s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function hexA(hex,a){const n=parseInt(hex.slice(1),16);return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`}
+let toastT;
+function toast(msg,err=false){const t=$('#toast');t.textContent=msg;t.classList.toggle('err',err);t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),err?6000:2800)}
+const fmtDate = ts=>new Date(ts).toLocaleString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
+
+/* ---------- Rendering ---------- */
+let current = null;   // current entry {id, createdAt, model, result}
+let activeKey = 'courage';
+
+function weightsOf(entry){
+  const w = Object.fromEntries(KEYS.map(k=>[k,0]));
+  if(entry) for(const l of entry.result.levels) w[l.key]=l.weight;
+  return w;
+}
+
+function render(entry){
+  current = entry;
+  const r = entry?.result;
+  const w = weightsOf(entry);
+  const byKey = r ? Object.fromEntries(r.levels.map(l=>[l.key,l])) : {};
+  const order = [...LEVELS].reverse();
+  let html = '<div class="spacer"></div>';
+  for(const L of order){
+    const d = byKey[L.key];
+    const wt = w[L.key]||0;
+    const isPrimary = r && r.primary===L.key;
+    html += `<section class="level" id="lv-${L.key}" data-key="${L.key}" style="--c:${L.color};--w:${wt.toFixed(3)}">
+      <div class="inner">
+        ${isPrimary?'<div class="badge">Hier bist du gerade</div>':''}
+        <div class="cal">${L.cal}</div>
+        <div class="name">${L.name}</div>
+        <div class="meta"><b>${L.emotion}</b> · ${L.process} · Leben wirkt ${L.view}</div>
+        ${r?`<div class="wbar"><div class="track"><div class="fill" style="width:${Math.round(wt*100)}%"></div></div>${Math.round(wt*100)} %</div>`:''}
+        ${d&&d.quote?`<blockquote class="quote">„${esc(d.quote)}“<small>Du hast gesagt</small></blockquote>`:''}
+        ${d?`<p class="example">${esc(d.example)}</p>`:`<p class="example lead">${esc(LEAD[L.key])}</p>`}
+      </div></section>`;
+    if(L.key==='courage') html += '<div class="threshold">200 · Schwelle der Integrität</div>';
+  }
+  html += '<div class="spacer bottom"></div>';
+  $('#scale').innerHTML = html;
+
+  // rail
+  $('#rail').innerHTML = order.map(L=>{
+    const wt=w[L.key]||0;
+    return `<button data-key="${L.key}" aria-label="${L.name} (${L.cal})" style="--c:${L.color}"><span class="seg ${wt>.15?'hot':''}" style="opacity:${r?(0.16+Math.min(.84,wt*2.4)).toFixed(2):.28}"></span></button>`;
+  }).join('');
+
+  // edge heat
+  if(r){
+    const n=order.length, stops=[];
+    order.forEach((L,i)=>{const a=Math.min(1,(w[L.key]||0)*2.6);const p=((i+.5)/n*100).toFixed(1);stops.push(`${hexA(L.color,a)} ${p}%`)});
+    const g=`linear-gradient(to bottom, ${stops.join(',')})`;
+    $('#edge').style.background=g;$('#edgeGlow').style.background=g;
+    $('#edge').style.opacity=1;$('#edgeGlow').style.opacity=.55;
+  } else {$('#edge').style.opacity=0;$('#edgeGlow').style.opacity=0}
+
+  // header
+  if(r){
+    $('#entryTitle').textContent = r.title || 'Ohne Titel';
+    $('#entrySub').textContent = `${BY[r.primary].name} · ${fmtDate(entry.createdAt)} · Zusammenfassung ›`;
+    $('#hint').style.opacity=0;
+  } else {
+    $('#entryTitle').textContent='Bewusstseinskarte';
+    $('#entrySub').textContent='Map of Consciousness · David R. Hawkins';
+    $('#hint').style.opacity=1;
+  }
+  observe();
+  requestAnimationFrame(()=>scrollToLevel(r?r.primary:'courage', false));
+}
+
+const LEAD = {
+  shame:'Das Gefühl, als Mensch falsch zu sein. Man möchte unsichtbar werden.',
+  guilt:'Ich habe etwas falsch gemacht – oder jemand anderes ist schuld. Vorwürfe nach innen oder außen.',
+  apathy:'Es hat ja doch keinen Sinn. Kraftlosigkeit, Resignation, Hilflosigkeit.',
+  grief:'Trauer über das, was verloren ist oder nie war. Bedauern und Schwere.',
+  fear:'Die Welt wirkt bedrohlich. Sorgen, Grübeln, Rückzug.',
+  desire:'Ich brauche etwas, um mich gut zu fühlen. Haben-Wollen, nie genug.',
+  anger:'Frust darüber, dass etwas nicht so ist, wie es sein sollte. Energie, die nach außen drängt.',
+  pride:'Ich weiß es besser. Fühlt sich gut an, braucht aber Bestätigung und ist verletzlich.',
+  courage:'Die Wende: Ich kann etwas tun. Hier beginnt eigene Kraft statt Druck.',
+  neutrality:'Es ist okay, so oder so. Gelassen, flexibel, nicht festgebissen.',
+  willingness:'Ich bin offen und bereit, mich einzubringen. Zuversicht und Engagement.',
+  acceptance:'Ich übernehme Verantwortung für mein Leben. Das Problem ist nicht „da draußen“.',
+  reason:'Ich will verstehen. Klarheit, Zusammenhänge, nüchterne Einsicht.',
+  love:'Bedingungslose Zuwendung – zu mir, zu anderen, zur Situation.',
+  joy:'Stille Freude, die nicht von Umständen abhängt. Mitgefühl und Weite.',
+  peace:'Tiefer Frieden. Alles ist, wie es ist.',
+  enlightenment:'Jenseits von Worten. Kein Problem mehr – nur noch Sein.'
+};
+
+function scrollToLevel(key, smooth=true){
+  const el = document.getElementById('lv-'+key);
+  if(el) el.scrollIntoView({block:'center', behavior: smooth?'smooth':'auto'});
+}
+
+let io;
+function observe(){
+  io?.disconnect();
+  io = new IntersectionObserver(es=>{
+    for(const e of es) if(e.isIntersecting) setActive(e.target.dataset.key);
+  },{root:$('#scale'), rootMargin:'-45% 0px -45% 0px', threshold:0});
+  document.querySelectorAll('.level').forEach(el=>io.observe(el));
+}
+function setActive(key){
+  activeKey=key;
+  document.documentElement.style.setProperty('--accent', BY[key].color);
+  document.querySelectorAll('#rail button').forEach(b=>b.classList.toggle('active', b.dataset.key===key));
+}
+
+$('#rail').addEventListener('click',e=>{const b=e.target.closest('button');if(b) scrollToLevel(b.dataset.key)});
+
+/* ---------- Summary sheet ---------- */
+function openSummary(){
+  if(!current) return;
+  const r=current.result;
+  $('#sumBody').innerHTML = `
+    <h2>${esc(r.title)}</h2>
+    ${r.care_note?`<div class="care"><p style="margin:0">${esc(r.care_note)}</p></div>`:''}
+    <p>${esc(r.summary)}</p>
+    <h3>Schwerpunkt</h3>
+    <p><span style="color:${BY[r.primary].color}">●</span> ${BY[r.primary].name} (${BY[r.primary].cal})</p>
+    ${r.next_step?`<h3>Ein Schritt nach oben</h3><p class="next" style="--accent:${BY[r.primary].color}">${esc(r.next_step)}</p>`:''}
+    <h3>Was du gesagt hast</h3>
+    <p class="small" style="white-space:pre-wrap;font-size:15px;color:#cfccc4">${esc(r.transcript||'–')}</p>
+    <p class="small" style="margin-top:14px">${fmtDate(current.createdAt)} · ${esc(current.model)}</p>`;
+  openSheet('#sumSheet');
+}
+$('#entryBtn').onclick=openSummary;
+
+/* ---------- Sheets ---------- */
+let openSheetEl=null;
+function openSheet(sel){closeSheet();openSheetEl=$(sel);openSheetEl.scrollTop=0;openSheetEl.classList.add('show');$('#sheetBg').classList.add('show')}
+function closeSheet(){if(openSheetEl)openSheetEl.classList.remove('show');openSheetEl=null;$('#sheetBg').classList.remove('show')}
+$('#sheetBg').onclick=closeSheet;
+document.querySelectorAll('[data-close]').forEach(b=>b.onclick=closeSheet);
+// swipe down to close
+document.querySelectorAll('.sheet').forEach(s=>{
+  let y0=null;
+  s.addEventListener('touchstart',e=>{y0=s.scrollTop<=0?e.touches[0].clientY:null},{passive:true});
+  s.addEventListener('touchend',e=>{if(y0!==null&&e.changedTouches[0].clientY-y0>90)closeSheet();y0=null},{passive:true});
+});
+
+/* ---------- History ---------- */
+function renderHist(){
+  const h=getHist();
+  $('#histList').innerHTML = h.length? h.map(e=>`<li>
+      <span class="dot" style="background:${BY[e.result.primary]?.color||'#888'}"></span>
+      <button class="t" data-open="${e.id}"><div>${esc(e.result.title||'Ohne Titel')}</div><div class="d">${fmtDate(e.createdAt)} · ${BY[e.result.primary]?.name||''}</div></button>
+      <button class="del" data-del="${e.id}" aria-label="Löschen">✕</button></li>`).join('')
+    : '<li class="small">Noch keine Einträge.</li>';
+}
+$('#histBtn').onclick=()=>{renderHist();openSheet('#histSheet')};
+$('#histList').addEventListener('click',e=>{
+  const o=e.target.closest('[data-open]'), d=e.target.closest('[data-del]');
+  if(o){const en=getHist().find(x=>x.id===o.dataset.open);if(en){closeSheet();render(en)}}
+  if(d){if(!confirm('Diesen Eintrag löschen?'))return;const h=getHist().filter(x=>x.id!==d.dataset.del);setHist(h);
+    if(current?.id===d.dataset.del) render(h[0]||null);renderHist()}
+});
+$('#exportBtn').onclick=()=>{
+  const data={app:'bewusstseinskarte',version:1,exportedAt:new Date().toISOString(),entries:getHist()};
+  const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+  const a=document.createElement('a');a.href=url;a.download=`bewusstseinskarte-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);
+};
+$('#importBtn').onclick=()=>$('#importFile').click();
+$('#importFile').onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;
+  try{
+    const data=JSON.parse(await f.text());const inc=(Array.isArray(data)?data:data.entries)||[];
+    const h=getHist();const ids=new Set(h.map(x=>x.id));let n=0;
+    for(const en of inc){ if(en&&en.id&&en.result&&!ids.has(en.id)){en.result=normalize(en.result);h.push(en);n++} }
+    h.sort((a,b)=>b.createdAt-a.createdAt);setHist(h);renderHist();toast(`${n} Einträge importiert`);
+  }catch(err){toast('Import fehlgeschlagen: '+err.message,true)}
+  e.target.value='';
+};
+
+/* ---------- Settings ---------- */
+function renderSettings(){
+  const k=getKey();
+  $('#keyState').textContent = k? `Gespeichert: ••••••${k.slice(-4)}` : 'Kein Key gespeichert.';
+  $('#modelIn').value=getModel(); $('#thinkIn').value=getThink();
+}
+$('#setBtn').onclick=()=>{renderSettings();openSheet('#setSheet')};
+$('#modelIn').onchange=e=>{LS.set(K.model,e.target.value.trim()||DEFAULT_MODEL);toast('Modell gespeichert')};
+$('#thinkIn').onchange=e=>{LS.set(K.think,e.target.value);toast('Gespeichert')};
+$('#keySave2').onclick=()=>saveKey($('#keyIn2').value, ()=>{$('#keyIn2').value='';renderSettings()});
+$('#keyDel').onclick=()=>{if(confirm('API-Key von diesem Gerät löschen?')){LS.del(K.key);closeSheet();showSetup()}};
+$('#wipeBtn').onclick=()=>{if(confirm('Verlauf, Key und Einstellungen löschen?')){[K.key,K.hist,K.model,K.think].forEach(LS.del);closeSheet();render(null);showSetup()}};
+
+/* ---------- Setup / API key ---------- */
+function showSetup(){$('#setup').classList.add('show');setTimeout(()=>$('#keyIn').focus(),100)}
+async function saveKey(raw, done){
+  const key=(raw||'').trim();
+  if(!key){toast('Bitte einen Key einfügen',true);return}
+  try{
+    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(getModel())}`,{headers:{'x-goog-api-key':key}});
+    if(res.status===400||res.status===401||res.status===403){
+      const j=await res.json().catch(()=>({}));
+      throw new Error(j?.error?.message||'Key wurde abgelehnt');
+    }
+  }catch(e){
+    if(!confirm(`Der Key konnte nicht geprüft werden:\n${e.message}\n\nTrotzdem speichern?`))return;
+  }
+  LS.set(K.key,key);toast('Key gespeichert');done&&done();
+}
+$('#keySave').onclick=()=>saveKey($('#keyIn').value,()=>{$('#keyIn').value='';$('#setup').classList.remove('show')});
+$('#keyIn').addEventListener('keydown',e=>{if(e.key==='Enter')$('#keySave').click()});
+
+/* ---------- Recording ---------- */
+let rec=null, stream=null, chunks=[], t0=0, tick=null, actx=null, raf=null;
+function pickMime(){
+  if(!window.MediaRecorder) return '';
+  for(const m of ['audio/webm;codecs=opus','audio/mp4','audio/webm','audio/ogg;codecs=opus','audio/aac'])
+    if(MediaRecorder.isTypeSupported?.(m)) return m;
+  return '';
+}
+async function startRec(){
+  if(!getKey()){showSetup();return}
+  if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder){toast('Dieser Browser unterstützt keine Aufnahme. Nutze das Stift-Symbol zum Schreiben.',true);return}
+  try{stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,channelCount:1}})}
+  catch(e){toast('Kein Mikrofonzugriff. Bitte in den Browser-Einstellungen erlauben.',true);return}
+  const mime=pickMime();
+  rec=new MediaRecorder(stream, mime?{mimeType:mime}:undefined);
+  chunks=[];
+  rec.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
+  rec.onstop=onRecStop;
+  rec.start(1000);
+  document.body.classList.add('recording');
+  $('#micIcon').style.display='none';$('#stopIcon').style.display='';
+  $('#recBtn').setAttribute('aria-label','Aufnahme beenden');
+  $('#hint').style.opacity=0;
+  t0=Date.now();updateTimer();tick=setInterval(updateTimer,250);
+  meter();
+}
+function updateTimer(){
+  const s=Math.floor((Date.now()-t0)/1000);
+  $('#timer').textContent=`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+  if(s>=MAX_SECONDS) stopRec();
+}
+function meter(){
+  try{
+    actx=new (window.AudioContext||window.webkitAudioContext)();
+    const src=actx.createMediaStreamSource(stream), an=actx.createAnalyser();an.fftSize=512;src.connect(an);
+    const buf=new Uint8Array(an.fftSize);
+    const loop=()=>{an.getByteTimeDomainData(buf);let m=0;for(const v of buf)m=Math.max(m,Math.abs(v-128));
+      $('#ring').style.transform=`scale(${1+Math.min(.35,m/128*1.2)})`;raf=requestAnimationFrame(loop)};
+    loop();
+  }catch{}
+}
+function stopRec(){
+  if(!rec||rec.state==='inactive')return;
+  clearInterval(tick);cancelAnimationFrame(raf);actx?.close().catch(()=>{});actx=null;
+  rec.stop();stream.getTracks().forEach(t=>t.stop());
+  document.body.classList.remove('recording');
+  $('#micIcon').style.display='';$('#stopIcon').style.display='none';
+  $('#recBtn').setAttribute('aria-label','Aufnahme starten');$('#ring').style.transform='';
+}
+async function onRecStop(){
+  const type=rec.mimeType||chunks[0]?.type||'audio/webm';
+  const blob=new Blob(chunks,{type});rec=null;
+  if((Date.now()-t0)<1200||blob.size<1500){toast('Die Aufnahme war zu kurz.');if(!current)$('#hint').style.opacity=1;return}
+  busy(true,'Ich höre noch einmal genau hin …');
+  try{
+    let audio;
+    try{audio={mime:'audio/wav',data:await blobToB64(await toWav16k(blob))}}
+    catch{audio={mime:type.split(';')[0].replace('audio/mp4','audio/aac'),data:await blobToB64(blob)}}
+    busy(true,'Ich ordne deine Worte ein …');
+    const result=await analyze([{inline_data:{mime_type:audio.mime,data:audio.data}},{text:'Hier ist meine Sprachaufnahme. Bitte transkribiere und analysiere sie wie beschrieben.'}]);
+    done(result);
+  }catch(e){fail(e)}
+}
+$('#recBtn').onclick=()=>rec?stopRec():startRec();
+
+async function toWav16k(blob){
+  const AC=window.AudioContext||window.webkitAudioContext;const ctx=new AC();
+  const decoded=await ctx.decodeAudioData(await blob.arrayBuffer());ctx.close().catch(()=>{});
+  const rate=16000, len=Math.max(1,Math.ceil(decoded.duration*rate));
+  const off=new (window.OfflineAudioContext||window.webkitOfflineAudioContext)(1,len,rate);
+  const s=off.createBufferSource();s.buffer=decoded;s.connect(off.destination);s.start();
+  const pcm=(await off.startRendering()).getChannelData(0);
+  const buf=new ArrayBuffer(44+pcm.length*2), v=new DataView(buf);
+  const w=(o,str)=>{for(let i=0;i<str.length;i++)v.setUint8(o+i,str.charCodeAt(i))};
+  w(0,'RIFF');v.setUint32(4,36+pcm.length*2,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);
+  v.setUint16(22,1,true);v.setUint32(24,rate,true);v.setUint32(28,rate*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);
+  w(36,'data');v.setUint32(40,pcm.length*2,true);
+  for(let i=0;i<pcm.length;i++){const x=Math.max(-1,Math.min(1,pcm[i]));v.setInt16(44+i*2,x<0?x*0x8000:x*0x7fff,true)}
+  return new Blob([buf],{type:'audio/wav'});
+}
+function blobToB64(blob){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(',')[1]);r.onerror=()=>rej(r.error);r.readAsDataURL(blob)})}
+
+/* ---------- Text input ---------- */
+$('#textBtn').onclick=()=>{if(!getKey()){showSetup();return}openSheet('#textSheet');setTimeout(()=>$('#textIn').focus(),300)};
+$('#textSend').onclick=async()=>{
+  const t=$('#textIn').value.trim();if(t.length<5){toast('Schreib noch ein bisschen mehr.');return}
+  closeSheet();busy(true,'Ich ordne deine Worte ein …');
+  try{const r=await analyze([{text:'Hier ist, was mich beschäftigt (geschrieben, nicht gesprochen). Verwende diesen Text als transcript:\n\n'+t}]);$('#textIn').value='';done(r)}
+  catch(e){fail(e)}
+};
+
+/* ---------- Gemini ---------- */
+const SYSTEM = `Du bist ein einfühlsamer, kluger Begleiter, der mit der „Map of Consciousness“ (Skala des Bewusstseins) von David R. Hawkins arbeitet.
+Die Person schildert dir (meist per Sprachaufnahme), was sie gerade beschäftigt.
+
+Die 17 Stufen (key – Name – Kalibrierung – typische Emotion):
+${LEVELS.map(l=>`- ${l.key} – ${l.name} – ${l.cal} – ${l.emotion}`).join('\n')}
+
+Deine Aufgaben:
+1. transcript: Transkribiere die Aufnahme wortgetreu in der gesprochenen Sprache. Lass nur reine Füllwörter (äh, ähm) weg. Bei geschriebenem Text: übernimm ihn unverändert.
+2. title: kurzer Titel des Themas (max. 6 Wörter), deutsch.
+3. summary: 1–2 Sätze, worum es geht und wo die Person emotional steht. Sprich die Person mit „du“ an.
+4. levels: GENAU 17 Einträge, einer pro key. Für jeden:
+   - weight: Zahl 0 bis 1 – wie stark diese Stufe in dem Gesagten gerade spürbar ist. Alle weights zusammen ergeben ungefähr 1. Meist tragen 1–4 Stufen fast das ganze Gewicht.
+   - example: 1–3 Sätze in der Ich-Form, Präsens, so als würde die Person selbst sprechen: Wie würde sie über GENAU DIESES konkrete Problem denken und fühlen, wenn sie auf dieser Stufe wäre? Konkret, persönlich, mit Details aus ihrer Schilderung – keine allgemeinen Definitionen. Für die Stufen, die im Gesagten vorkommen, nah an ihren eigenen Gedanken bleiben. Höhere Stufen glaubwürdig und menschlich formulieren, nicht kitschig oder esoterisch.
+   - quote: Wenn die Person etwas gesagt hat, das klar zu dieser Stufe passt, ein WÖRTLICHES, kurzes Zitat aus dem transcript (max. 25 Wörter, nicht umformulieren). Sonst leerer String. Nur für Stufen mit nennenswertem weight.
+5. primary: key der Stufe mit dem höchsten weight.
+6. next_step: 1–2 Sätze, sanfter und konkreter Impuls, wie die Person von ihrer Hauptstufe aus einen Schritt nach oben gehen könnte (meist Richtung Mut, Akzeptanz oder Bereitschaft). Du-Form.
+7. care_note: Nur falls Hinweise auf eine akute Krise, Selbstgefährdung oder Gewalt bestehen: ein warmer, kurzer Hinweis, sich jetzt Unterstützung zu holen (in Deutschland z. B. TelefonSeelsorge 0800 111 0 111 oder 0800 111 0 222, im Notfall 112). Sonst leerer String.
+
+Haltung: nicht wertend, keine Diagnose. Untere Stufen sind menschlich und normal. Wenn die Aufnahme leer oder unverständlich ist: transcript leer lassen, title „Nichts verstanden“, alle weights 0 außer neutrality = 1, und examples trotzdem allgemein ausfüllen.`;
+
+const SCHEMA = {
+  type:'OBJECT',
+  properties:{
+    transcript:{type:'STRING'},
+    title:{type:'STRING'},
+    summary:{type:'STRING'},
+    levels:{type:'ARRAY',items:{type:'OBJECT',properties:{
+      key:{type:'STRING',enum:KEYS},weight:{type:'NUMBER'},example:{type:'STRING'},quote:{type:'STRING'}
+    },required:['key','weight','example','quote'],propertyOrdering:['key','weight','quote','example']}},
+    primary:{type:'STRING',enum:KEYS},
+    next_step:{type:'STRING'},
+    care_note:{type:'STRING'}
+  },
+  required:['transcript','title','summary','levels','primary','next_step','care_note'],
+  propertyOrdering:['transcript','title','summary','levels','primary','next_step','care_note']
+};
+
+async function analyze(parts){
+  const key=getKey(), model=getModel();
+  const body={
+    systemInstruction:{parts:[{text:SYSTEM}]},
+    contents:[{role:'user',parts}],
+    generationConfig:{responseMimeType:'application/json',responseSchema:SCHEMA,temperature:0.7,thinkingConfig:{thinkingLevel:getThink()}}
+  };
+  let res=await callApi(model,key,body);
+  // Fallback: some models reject thinkingLevel – retry without it
+  if(res.status===400){
+    const txt=await res.clone().text();
+    if(/thinking/i.test(txt)){delete body.generationConfig.thinkingConfig;res=await callApi(model,key,body)}
+  }
+  if(!res.ok){
+    const j=await res.json().catch(()=>null);
+    const msg=j?.error?.message||res.statusText;
+    if(res.status===400&&/API key/i.test(msg)) throw new Error('Der API-Key ist ungültig. Bitte in den Einstellungen ersetzen.');
+    if(res.status===429) throw new Error('Kontingent erschöpft oder zu viele Anfragen. Bitte kurz warten. ('+msg+')');
+    if(res.status===404) throw new Error(`Modell „${model}“ nicht gefunden. Bitte in den Einstellungen prüfen.`);
+    throw new Error(`Gemini-Fehler ${res.status}: ${msg}`);
+  }
+  const j=await res.json();
+  const cand=j.candidates?.[0];
+  if(!cand){throw new Error(j.promptFeedback?.blockReason?`Anfrage blockiert (${j.promptFeedback.blockReason}).`:'Keine Antwort von Gemini.')}
+  const text=(cand.content?.parts||[]).filter(p=>!p.thought&&p.text).map(p=>p.text).join('');
+  if(!text) throw new Error(cand.finishReason==='SAFETY'?'Die Antwort wurde vom Sicherheitsfilter blockiert.':'Leere Antwort ('+(cand.finishReason||'?')+').');
+  let data;
+  try{data=JSON.parse(text)}catch{const m=text.match(/\{[\s\S]*\}/);if(!m)throw new Error('Antwort war kein gültiges JSON.');data=JSON.parse(m[0])}
+  return normalize(data);
+}
+function callApi(model,key,body){
+  return fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,{
+    method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},body:JSON.stringify(body)});
+}
+function normalize(d){
+  const map={};
+  for(const l of (d.levels||[])) if(KEYS.includes(l.key)) map[l.key]={key:l.key,weight:Math.max(0,+l.weight||0),example:String(l.example||''),quote:String(l.quote||'')};
+  for(const k of KEYS) if(!map[k]) map[k]={key:k,weight:0,example:LEAD[k],quote:''};
+  let sum=Object.values(map).reduce((a,l)=>a+l.weight,0);
+  if(sum>0) for(const l of Object.values(map)) l.weight=l.weight/sum;
+  const levels=KEYS.map(k=>map[k]);
+  let primary=KEYS.includes(d.primary)?d.primary:null;
+  const top=levels.reduce((a,b)=>b.weight>a.weight?b:a);
+  if(!primary||map[primary].weight<top.weight*0.6) primary=top.key;
+  return {transcript:String(d.transcript||''),title:String(d.title||'Ohne Titel'),summary:String(d.summary||''),
+    levels,primary,next_step:String(d.next_step||''),care_note:String(d.care_note||'')};
+}
+
+/* ---------- Flow ---------- */
+function busy(on,text){$('#busy').classList.toggle('show',on);if(text)$('#busyText').textContent=text}
+function done(result){
+  const entry={id:(crypto.randomUUID?.()||String(Date.now())+Math.random().toString(16).slice(2)),createdAt:Date.now(),model:getModel(),result};
+  const h=getHist();h.unshift(entry);setHist(h);
+  busy(false);render(entry);
+  if(result.care_note) setTimeout(openSummary,700);
+}
+function fail(e){busy(false);if(!current)$('#hint').style.opacity=1;toast(e.message||String(e),true);console.error(e)}
+
+/* ---------- Init ---------- */
+window.__render = r=>render({id:'demo',createdAt:Date.now(),model:'demo',result:normalize(r)});
+render(getHist()[0]||null);
+if(!getKey()) showSetup();
+if('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('sw.js').catch(()=>{});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet()});
+</script>
+</body>
+</html>
